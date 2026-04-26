@@ -4,66 +4,163 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stem Hand Controller</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cascadia+Mono:wght@400;600;700&display=swap" />
   <style>
     * { box-sizing: border-box; }
+
+    :root {
+      --ui-bg: #0c0c0c;
+      --ui-panel: rgba(12, 12, 12, 0.78);
+      --ui-border: rgba(164, 215, 255, 0.35);
+      --ui-glow: rgba(164, 215, 255, 0.35);
+      --ui-text: #a4d7ff;
+      --ui-text-strong: #e9f6ff;
+    }
 
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: Arial, sans-serif;
+      font-family: "Cascadia Mono", monospace;
       background:
-        radial-gradient(circle at 20% 10%, rgba(0, 255, 255, 0.25), transparent 30%),
-        radial-gradient(circle at 80% 90%, rgba(255, 0, 170, 0.25), transparent 35%),
-        #060711;
-      color: white;
+        radial-gradient(circle at 12% 8%, rgba(164, 215, 255, 0.2), transparent 28%),
+        radial-gradient(circle at 78% 20%, rgba(63, 139, 200, 0.2), transparent 40%),
+        radial-gradient(circle at 85% 90%, rgba(53, 95, 138, 0.22), transparent 45%),
+        #07090d;
+      color: var(--ui-text-strong);
+      padding: 18px;
+    }
+
+    .ui-shell {
+      width: min(1420px, 100%);
+      min-height: calc(100vh - 36px);
       display: grid;
-      place-items: center;
-      padding: 20px;
+      grid-template-columns: 74px 1fr;
+      gap: 16px;
+    }
+
+    .hud-rail {
+      border: 1px solid var(--ui-border);
+      background: linear-gradient(180deg, rgba(12, 12, 12, 0.92), rgba(7, 12, 20, 0.92));
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 10px;
+      box-shadow: 0 0 26px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(164, 215, 255, 0.06);
+    }
+
+    .rail-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      color: var(--ui-text);
+      letter-spacing: 0.14em;
+      font-size: 10px;
+      opacity: 0.9;
+      user-select: none;
+    }
+
+    .rail-bars {
+      display: grid;
+      gap: 4px;
+      width: 36px;
+      justify-items: center;
+    }
+
+    .rail-bars span {
+      width: 28px;
+      height: 4px;
+      background: linear-gradient(90deg, rgba(164, 215, 255, 0.28), rgba(164, 215, 255, 0.9));
+      box-shadow: 0 0 10px rgba(164, 215, 255, 0.25);
+      border-radius: 0;
+    }
+
+    .main-wrap {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+    }
+
+    .top-hud {
+      border: 1px solid var(--ui-border);
+      background: var(--ui-panel);
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 1fr minmax(220px, 520px);
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 0 26px rgba(0, 0, 0, 0.5), inset 0 0 18px rgba(164, 215, 255, 0.06);
+    }
+
+    .hud-title {
+      margin: 0;
+      color: var(--ui-text);
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hud-search {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--ui-border);
+      background: rgba(12, 12, 12, 0.78);
+      color: var(--ui-text);
+      padding: 0 12px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .hud-search:focus {
+      border-color: #fff;
+      box-shadow: 0 0 16px var(--ui-glow);
     }
 
     .app {
-      width: min(1120px, 100%);
+      width: 100%;
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 18px;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 14px;
     }
 
     .card {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.13);
-      border-radius: 28px;
+      background: var(--ui-panel);
+      border: 1px solid var(--ui-border);
+      border-radius: 0;
       padding: 22px;
-      box-shadow: 0 20px 70px rgba(0,0,0,0.35);
+      box-shadow: 0 0 28px rgba(0,0,0,0.45), inset 0 0 24px rgba(164, 215, 255, 0.04);
       backdrop-filter: blur(16px);
     }
 
-    h1 { margin: 0 0 8px; font-size: 34px; line-height: 1.0; }
-    h2 { margin: 0 0 10px; font-size: 20px; }
-    p { color: #d7d7e8; line-height: 1.45; }
+    h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.0; color: var(--ui-text-strong); }
+    h2 { margin: 0 0 10px; font-size: 16px; text-transform: uppercase; color: var(--ui-text); }
+    p { color: rgba(164, 215, 255, 0.9); line-height: 1.45; font-size: 13px; }
 
     .upload-box {
       margin-top: 16px;
       padding: 16px;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0;
+      background: rgba(164, 215, 255, 0.05);
+      border: 1px solid rgba(164, 215, 255, 0.2);
     }
 
     input[type="file"] {
       width: 100%;
       padding: 13px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 0;
+      background: rgba(12, 12, 12, 0.7);
+      color: var(--ui-text);
+      border: 1px solid rgba(164, 215, 255, 0.2);
       margin-bottom: 12px;
+      font-family: inherit;
+      font-size: 12px;
     }
 
     .progress {
       width: 100%;
       height: 14px;
-      background: rgba(255,255,255,0.12);
-      border-radius: 999px;
+      background: rgba(164, 215, 255, 0.14);
+      border-radius: 0;
       overflow: hidden;
       margin-top: 10px;
     }
@@ -71,14 +168,14 @@
     .progress-fill {
       width: 0%;
       height: 100%;
-      background: linear-gradient(90deg, #62eaff, #ff5de8);
+      background: linear-gradient(90deg, rgba(164, 215, 255, 0.6), rgba(164, 215, 255, 1));
       border-radius: inherit;
       transition: width 0.25s ease;
     }
 
     .small-status {
-      color: #e9e9ff;
-      font-size: 14px;
+      color: var(--ui-text);
+      font-size: 12px;
       margin-top: 10px;
       min-height: 20px;
     }
@@ -91,51 +188,60 @@
     }
 
     button {
-      border: 0;
-      border-radius: 20px;
-      padding: 18px;
-      font-size: 18px;
-      font-weight: 700;
-      color: white;
-      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(164, 215, 255, 0.28);
+      border-radius: 0;
+      padding: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ui-text);
+      background: rgba(12, 12, 12, 0.74);
       cursor: pointer;
-      transition: 0.12s;
+      transition: transform 0.12s, border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
     }
 
     button:disabled { opacity: 0.45; cursor: not-allowed; }
     button:active { transform: scale(0.96); }
-    button.primary { background: linear-gradient(135deg, rgba(0,220,255,0.65), rgba(255,0,180,0.65)); }
+    button:hover:not(:disabled) {
+      border-color: var(--ui-text);
+      box-shadow: 0 0 14px rgba(164, 215, 255, 0.2);
+    }
+    button.primary {
+      background: linear-gradient(90deg, rgba(164, 215, 255, 0.18), rgba(164, 215, 255, 0.35));
+      color: #fff;
+    }
 
     .stem-grid { display: grid; gap: 12px; margin-top: 18px; }
 
     .stem {
-      border-radius: 18px;
-      background: rgba(255,255,255,0.1);
+      border-radius: 0;
+      background: rgba(164, 215, 255, 0.06);
       padding: 14px;
       display: grid;
       grid-template-columns: 90px 1fr 60px;
       align-items: center;
       gap: 12px;
-      border: 1px solid transparent;
+      border: 1px solid rgba(164, 215, 255, 0.12);
     }
 
     .stem.active {
-      border-color: rgba(120, 235, 255, 0.9);
-      box-shadow: 0 0 25px rgba(72, 220, 255, 0.22);
+      border-color: rgba(164, 215, 255, 0.9);
+      box-shadow: 0 0 18px rgba(164, 215, 255, 0.25);
     }
 
-    .bar { height: 16px; border-radius: 999px; background: rgba(255,255,255,0.13); overflow: hidden; }
-    .fill { height: 100%; width: 50%; background: linear-gradient(90deg, #62eaff, #ff5de8); border-radius: inherit; }
+    .bar { height: 16px; border-radius: 0; background: rgba(164,215,255,0.16); overflow: hidden; }
+    .fill { height: 100%; width: 50%; background: linear-gradient(90deg, rgba(164,215,255,0.3), rgba(164,215,255,0.95)); border-radius: inherit; }
 
-    #visualizer { width: 100%; height: 390px; display: block; border-radius: 24px; background: #05050c; }
+    #visualizer { width: 100%; height: 390px; display: block; border-radius: 0; background: #05050c; border: 1px solid rgba(164,215,255,0.2); }
 
     .video-wrap {
       position: relative;
       width: 100%;
       margin-top: 14px;
-      border-radius: 20px;
+      border-radius: 0;
       overflow: hidden;
       background: #05050c;
+      border: 1px solid rgba(164,215,255,0.2);
     }
 
     .video-wrap video {
@@ -156,20 +262,20 @@
     }
 
     .readout { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
-    .pill { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 16px; font-size: 14px; color: #e9e9ff; }
-    .note { font-size: 13px; color: #cfcfe8; margin-top: 10px; }
+    .pill { background: rgba(164,215,255,0.08); padding: 10px 12px; border-radius: 0; font-size: 12px; color: var(--ui-text); border: 1px solid rgba(164,215,255,0.16); }
+    .note { font-size: 12px; color: rgba(164,215,255,0.85); margin-top: 10px; }
 
     .track-panel {
       margin-top: 14px;
       padding: 14px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0;
+      background: rgba(164,215,255,0.05);
+      border: 1px solid rgba(164,215,255,0.18);
     }
 
     .track-empty {
-      color: #cfd5eb;
-      font-size: 14px;
+      color: rgba(164,215,255,0.9);
+      font-size: 12px;
       padding-top: 6px;
     }
 
@@ -180,6 +286,7 @@
       gap: 12px;
       padding: 10px 0;
       border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 12px;
     }
 
     .track-row:last-child { border-bottom: 0; }
@@ -190,7 +297,7 @@
     }
 
     .track-meta strong { font-size: 14px; }
-    .track-meta span { font-size: 12px; color: #cfd5eb; }
+    .track-meta span { font-size: 11px; color: rgba(164,215,255,0.8); }
 
     .track-actions {
       display: flex;
@@ -214,24 +321,50 @@
 
     .track-select label {
       font-size: 12px;
-      color: #cfd5eb;
+      color: rgba(164,215,255,0.85);
       font-weight: 700;
     }
 
     .track-select select {
       width: 100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.12);
-      color: white;
+      border-radius: 0;
+      border: 1px solid rgba(164,215,255,0.22);
+      background: rgba(12,12,12,0.75);
+      color: var(--ui-text);
       padding: 8px 10px;
+      font-family: inherit;
     }
 
-    @media (max-width: 850px) { .app { grid-template-columns: 1fr; } }
+    @media (max-width: 980px) {
+      .ui-shell { grid-template-columns: 1fr; }
+      .hud-rail { display: none; }
+      .top-hud { grid-template-columns: 1fr; }
+      .app { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <main class="app">
+  <div class="ui-shell">
+    <aside class="hud-rail">
+      <div class="rail-label">WAVION INTERFACE</div>
+      <div class="rail-bars" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+      <div class="rail-label">TRK MATRIX ACTIVE</div>
+    </aside>
+
+    <div class="main-wrap">
+      <header class="top-hud">
+        <h2 class="hud-title">Mix Up Your Next Beat</h2>
+        <input class="hud-search" type="text" placeholder="search tracks / gesture mode / control logs" />
+      </header>
+
+      <main class="app">
     <section class="card">
       <h1>Stem Hand Controller</h1>
       <p>Upload a song, auto-split it into stems, then control vocals, drums, bass, and other with your hands.</p>
@@ -275,6 +408,8 @@
         <div class="pill">Volume: <span id="volumeText">1.00</span></div>
         <div class="pill">Filter: <span id="filterText">8000</span> Hz</div>
         <div class="pill">Pitch: <span id="pitchText">1.00</span>x</div>
+        <div class="pill">Crossfade: <span id="crossfadeText">0.50</span></div>
+        <div class="pill">Gesture: <span id="gestureText">none</span></div>
       </div>
 
       <div class="video-wrap">
@@ -284,7 +419,9 @@
     </section>
 
     <section class="card"><canvas id="visualizer" width="900" height="640"></canvas></section>
-  </main>
+      </main>
+    </div>
+  </div>
 
   <script type="module">
     const handTrackingModuleUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
@@ -297,6 +434,15 @@
       pinchActivationDistance: 0.048,
       pinchReleaseDistance: 0.068,
       pinchCooldownMs: 220,
+      swipeWindowMs: 230,
+      swipeDistanceThreshold: 0.16,
+      swipeCooldownMs: 550,
+      clapDistanceThreshold: 0.18,
+      clapCooldownMs: 650,
+      twistPitchScale: 0.42,
+      volumeGestureDeltaThreshold: 0.007,
+      volumeGestureScale: 1.9,
+      twistDeltaThreshold: 0.012,
       minHandDetectionConfidence: 0.55,
       minHandPresenceConfidence: 0.55,
       minTrackingConfidence: 0.55
@@ -347,6 +493,8 @@
     const volumeText = document.getElementById("volumeText");
     const filterText = document.getElementById("filterText");
     const pitchText = document.getElementById("pitchText");
+    const crossfadeText = document.getElementById("crossfadeText");
+    const gestureText = document.getElementById("gestureText");
     const canvas = document.getElementById("visualizer");
     const ctx = canvas.getContext("2d");
     const video = document.getElementById("video");
@@ -368,6 +516,14 @@
     let smoothedSecondaryTip = null;
     let lastPinchSwitchAt = 0;
     let pinchActiveByTip = {};
+    let crossfadeValue = 0.5;
+    let neutralWristAngle = null;
+    let lastSwipeAt = 0;
+    let lastClapAt = 0;
+    let fistLatch = false;
+    let handXHistory = [];
+    let previousPrimaryTipForControl = null;
+    let previousWristAngle = null;
 
     for (const name of stemNames) {
       const row = document.createElement("div");
@@ -396,13 +552,29 @@
     function ensureTrackControl(trackId) {
       if (!trackControls[trackId]) {
         trackControls[trackId] = {
-          selectedStem: "vocals",
-          volume: 1,
-          filter: 8000,
-          pitch: 1
+          selectedStem: "all",
+          stemValues: {
+            all: { volume: 1, filter: 8000, pitch: 1 },
+            vocals: { volume: 1, filter: 8000, pitch: 1 },
+            drums: { volume: 1, filter: 8000, pitch: 1 },
+            bass: { volume: 1, filter: 8000, pitch: 1 },
+            other: { volume: 1, filter: 8000, pitch: 1 }
+          }
         };
       }
       return trackControls[trackId];
+    }
+
+    function ensureStemState(control, stemName) {
+      if (!control.stemValues) {
+        control.stemValues = {};
+      }
+
+      if (!control.stemValues[stemName]) {
+        control.stemValues[stemName] = { volume: 1, filter: 8000, pitch: 1 };
+      }
+
+      return control.stemValues[stemName];
     }
 
     function syncControlledTrack() {
@@ -535,6 +707,19 @@
         }
 
         savedTracks = Array.isArray(result.tracks) ? result.tracks : [];
+
+        if (activeTrackIds.length === 0 && savedTracks.length > 0) {
+          const defaults = savedTracks.slice(0, Math.min(2, savedTracks.length)).map((track) => track.id);
+          activeTrackIds = defaults;
+          for (const trackId of defaults) {
+            ensureTrackControl(trackId);
+          }
+          controlledTrackId = defaults[0] || null;
+          splitStatus.textContent = defaults.length >= 2
+            ? "Loaded 2 tracks for default crossfade control."
+            : "Loaded your latest track. Add another for crossfade.";
+        }
+
         renderSavedTracks();
         renderActiveTracks();
         applyControls();
@@ -683,6 +868,7 @@
       if (audioContext.state === "suspended") await audioContext.resume();
       await loadActiveTrackBuffers();
       if (!isPlaying) playAll();
+      setGestureText("play");
     };
 
     window.stopAudio = function () {
@@ -696,18 +882,25 @@
       }
       trackNodes = {};
       isPlaying = false;
+      setGestureText("stop");
     };
 
     window.resetControls = function () {
       if (!controlledTrackId) return;
 
       const control = ensureTrackControl(controlledTrackId);
-      control.selectedStem = "vocals";
-      control.volume = 1;
-      control.filter = 8000;
-      control.pitch = 1;
+      control.selectedStem = "all";
+      const stems = ["all", "vocals", "drums", "bass", "other"];
+      for (const stemName of stems) {
+        const state = ensureStemState(control, stemName);
+        state.volume = 1;
+        state.filter = 8000;
+        state.pitch = 1;
+      }
+      crossfadeValue = 0.5;
 
       applyControls();
+      setGestureText("reset");
     };
 
     async function loadTrackBuffers(trackId) {
@@ -750,8 +943,11 @@
         const nodes = {
           sources: {},
           gains: {},
-          filters: {}
+          filters: {},
+          masterGain: audioContext.createGain()
         };
+
+        nodes.masterGain.gain.value = 1;
 
         for (const name of stemNames) {
           const source = audioContext.createBufferSource();
@@ -767,13 +963,15 @@
 
           source.connect(filter);
           filter.connect(gain);
-          gain.connect(audioContext.destination);
+          gain.connect(nodes.masterGain);
           source.start(startTime);
 
           nodes.sources[name] = source;
           nodes.gains[name] = gain;
           nodes.filters[name] = filter;
         }
+
+        nodes.masterGain.connect(audioContext.destination);
 
         trackNodes[trackId] = nodes;
       }
@@ -787,12 +985,15 @@
       if (!nodes) return;
 
       const control = ensureTrackControl(trackId);
+      const selectedStemName = control.selectedStem;
+      const selectedState = ensureStemState(control, selectedStemName);
 
       for (const name of stemNames) {
-        const isSelected = name === control.selectedStem;
-        if (nodes.gains[name]) nodes.gains[name].gain.value = isSelected ? control.volume : 1;
-        if (nodes.filters[name]) nodes.filters[name].frequency.value = isSelected ? control.filter : 8000;
-        if (nodes.sources[name]) nodes.sources[name].playbackRate.value = isSelected ? control.pitch : 1;
+        const isWholeTrack = selectedStemName === "all";
+        const stateForStem = isWholeTrack ? selectedState : ensureStemState(control, name);
+        if (nodes.gains[name]) nodes.gains[name].gain.value = stateForStem.volume;
+        if (nodes.filters[name]) nodes.filters[name].frequency.value = stateForStem.filter;
+        if (nodes.sources[name]) nodes.sources[name].playbackRate.value = stateForStem.pitch;
       }
     }
 
@@ -831,32 +1032,33 @@
 
       const control = ensureTrackControl(controlledTrackId);
       selectedStem = control.selectedStem;
-      volumeValue = control.volume;
-      filterValue = control.filter;
-      pitchValue = control.pitch;
+      const selectedState = ensureStemState(control, selectedStem);
+      volumeValue = selectedState.volume;
+      filterValue = selectedState.filter;
+      pitchValue = selectedState.pitch;
 
-      selectedText.textContent = selectedStem;
+      selectedText.textContent = selectedStem === "all" ? "song" : selectedStem;
       volumeText.textContent = volumeValue.toFixed(2);
       filterText.textContent = Math.round(filterValue);
       pitchText.textContent = pitchValue.toFixed(2);
+      crossfadeText.textContent = crossfadeValue.toFixed(2);
 
       for (const name of stemNames) {
         const row = document.getElementById(`stem-${name}`);
         const fill = document.getElementById(`fill-${name}`);
         const val = document.getElementById(`val-${name}`);
-        row.classList.toggle("active", name === selectedStem);
-        if (name === selectedStem) {
-          fill.style.width = `${Math.round(volumeValue * 100)}%`;
-          val.textContent = volumeValue.toFixed(2);
-        } else {
-          fill.style.width = "100%";
-          val.textContent = "1.00";
-        }
+        const isWholeTrack = selectedStem === "all";
+        const stateForStem = isWholeTrack ? selectedState : ensureStemState(control, name);
+        row.classList.toggle("active", !isWholeTrack && name === selectedStem);
+        fill.style.width = `${Math.round(stateForStem.volume * 100)}%`;
+        val.textContent = stateForStem.volume.toFixed(2);
       }
 
       for (const trackId of activeTrackIds) {
         applyTrackNodeControl(trackId);
       }
+
+      applyTrackMixGains();
 
       sendToServer({
         activeTracks: activeTrackIds,
@@ -866,6 +1068,8 @@
         volume: volumeValue,
         filterValue,
         pitchValue,
+        crossfade: crossfadeValue,
+        gestureMode: selectedStem === "all" ? "whole-song" : "stem",
         energy: Math.max(volumeValue, filterValue / 12000)
       });
     }
@@ -899,6 +1103,119 @@
       const dx = pointA.x - pointB.x;
       const dy = pointA.y - pointB.y;
       return Math.hypot(dx, dy);
+    }
+
+    function normalizeAngleDiff(angle) {
+      let value = angle;
+      while (value > Math.PI) value -= Math.PI * 2;
+      while (value < -Math.PI) value += Math.PI * 2;
+      return value;
+    }
+
+    function wristRotationAngle(landmarks) {
+      const wrist = landmarks[0];
+      const middleMcp = landmarks[9];
+      const mirroredX = 1 - middleMcp.x;
+      const mirroredWristX = 1 - wrist.x;
+      return Math.atan2(middleMcp.y - wrist.y, mirroredX - mirroredWristX);
+    }
+
+    function isFist(landmarks) {
+      const wrist = landmarks[0];
+      const middleMcp = landmarks[9];
+      const palmScale = Math.max(distance2D(wrist, middleMcp), 0.03);
+      const tipIndices = [8, 12, 16, 20];
+      const averageTipDistance = tipIndices
+        .map((index) => distance2D(landmarks[index], wrist) / palmScale)
+        .reduce((sum, value) => sum + value, 0) / tipIndices.length;
+      return averageTipDistance < 1.22;
+    }
+
+    function pushHandXSample(x, nowMs) {
+      handXHistory.push({ x, t: nowMs });
+      handXHistory = handXHistory.filter((entry) => nowMs - entry.t <= trackingConfig.swipeWindowMs);
+    }
+
+    function detectSwipeDirection(nowMs) {
+      if (handXHistory.length < 2) {
+        return null;
+      }
+
+      const first = handXHistory[0];
+      const last = handXHistory[handXHistory.length - 1];
+      const deltaX = last.x - first.x;
+
+      if (Math.abs(deltaX) < trackingConfig.swipeDistanceThreshold) {
+        return null;
+      }
+
+      if (nowMs - lastSwipeAt < trackingConfig.swipeCooldownMs) {
+        return null;
+      }
+
+      lastSwipeAt = nowMs;
+      return deltaX > 0 ? "right" : "left";
+    }
+
+    function setGestureText(message) {
+      gestureText.textContent = message;
+    }
+
+    function setTransportPaused(shouldPause) {
+      if (!audioContext) {
+        return;
+      }
+
+      if (shouldPause) {
+        audioContext.suspend();
+        splitStatus.textContent = "Paused by fist gesture.";
+        setGestureText("fist pause");
+      } else {
+        audioContext.resume();
+        splitStatus.textContent = "Playback resumed by clap.";
+        setGestureText("clap play");
+      }
+    }
+
+    async function switchSongBySwipe(direction) {
+      if (activeTrackIds.length === 0) {
+        return;
+      }
+
+      const currentIndex = controlledTrackId ? activeTrackIds.indexOf(controlledTrackId) : 0;
+      const resolvedCurrent = currentIndex >= 0 ? currentIndex : 0;
+      const offset = direction === "left" ? 1 : -1;
+      const nextIndex = (resolvedCurrent + offset + activeTrackIds.length) % activeTrackIds.length;
+      controlledTrackId = activeTrackIds[nextIndex];
+
+      renderActiveTracks();
+      applyControls();
+
+      const label = direction === "left" ? "skip next" : "previous song";
+      splitStatus.textContent = `${label}: now controlling ${trackLabel(controlledTrackId)}.`;
+      setGestureText(label);
+    }
+
+    function applyTrackMixGains() {
+      if (!isPlaying) {
+        return;
+      }
+
+      if (activeTrackIds.length === 2) {
+        const clamped = clamp(crossfadeValue, 0, 1);
+        const gainA = Math.cos((clamped * Math.PI) / 2);
+        const gainB = Math.sin((clamped * Math.PI) / 2);
+        const first = trackNodes[activeTrackIds[0]];
+        const second = trackNodes[activeTrackIds[1]];
+        if (first?.masterGain) first.masterGain.gain.value = gainA;
+        if (second?.masterGain) second.masterGain.gain.value = gainB;
+      } else {
+        for (const trackId of activeTrackIds) {
+          if (trackNodes[trackId]?.masterGain) {
+            trackNodes[trackId].masterGain.gain.value = 1;
+          }
+        }
+      }
     }
 
     function resetPinchState() {
@@ -985,9 +1302,10 @@
 
     function updateStemFromPinch(landmarks, control) {
       const thumbTip = landmarks[4];
-      if (!thumbTip) return;
+      if (!thumbTip) return false;
 
       const now = performance.now();
+      let anyPinchActive = false;
 
       for (const mapping of pinchStemMap) {
         const fingerTip = landmarks[mapping.tipIndex];
@@ -1000,6 +1318,7 @@
           : distance <= trackingConfig.pinchActivationDistance;
 
         pinchActiveByTip[mapping.tipIndex] = isActive;
+        anyPinchActive = anyPinchActive || isActive;
 
         if (
           isActive
@@ -1010,9 +1329,12 @@
           control.selectedStem = mapping.stem;
           lastPinchSwitchAt = now;
           splitStatus.textContent = `${mapping.label} pinch selected ${mapping.stem}.`;
+          setGestureText(`pinch ${mapping.stem}`);
           break;
         }
       }
+
+      return anyPinchActive;
     }
 
     window.toggleCamera = async function () {
@@ -1066,12 +1388,18 @@
           lastVideoTime = -1;
           smoothedPrimaryTip = null;
           smoothedSecondaryTip = null;
+          neutralWristAngle = null;
+          previousWristAngle = null;
+          previousPrimaryTipForControl = null;
+          handXHistory = [];
+          fistLatch = false;
           resetPinchState();
           if (!controlledTrackId) {
             splitStatus.textContent = "Hand tracking is on. Add a track to Mix Setup and pick a controlled track.";
           } else {
-            splitStatus.textContent = "Hand tracking is on. Move your hand up/down for volume, left/right for filter, pinch to switch stems.";
+            splitStatus.textContent = "Hand tracking is on. Pinch fingers for stems, twist for speed, swipe to change songs.";
           }
+          setGestureText("tracking on");
           requestAnimationFrame(trackHands);
         } catch (error) {
           splitStatus.textContent = "Camera access denied or unavailable.";
@@ -1090,8 +1418,14 @@
         smoothedPrimaryTip = null;
         smoothedSecondaryTip = null;
         lastVideoTime = -1;
+        neutralWristAngle = null;
+        previousWristAngle = null;
+        previousPrimaryTipForControl = null;
+        handXHistory = [];
+        fistLatch = false;
         resetPinchState();
         clearHandOverlay();
+        setGestureText("tracking off");
       }
     };
 
@@ -1113,6 +1447,26 @@
       const results = handLandmarker.detectForVideo(video, performance.now());
       drawHandOverlay(results);
 
+      const nowMs = performance.now();
+
+      if (results.landmarks && results.landmarks.length >= 2) {
+        const bothFists = isFist(results.landmarks[0]) && isFist(results.landmarks[1]);
+        const wristsDistance = distance2D(results.landmarks[0][0], results.landmarks[1][0]);
+
+        if (bothFists && !fistLatch) {
+          setTransportPaused(true);
+          fistLatch = true;
+        } else if (wristsDistance < trackingConfig.clapDistanceThreshold && nowMs - lastClapAt > trackingConfig.clapCooldownMs) {
+          setTransportPaused(false);
+          lastClapAt = nowMs;
+          fistLatch = false;
+        } else if (!bothFists) {
+          fistLatch = false;
+        }
+      } else {
+        fistLatch = false;
+      }
+
       if (results.landmarks && results.landmarks.length > 0 && controlledTrackId) {
         const control = ensureTrackControl(controlledTrackId);
         const primaryHand = results.landmarks[0];
@@ -1120,7 +1474,8 @@
         const firstHandTip = primaryHand[8];
         const secondHandTip = secondaryHand ? secondaryHand[8] : null;
 
-        updateStemFromPinch(primaryHand, control);
+        const anyPinchActive = updateStemFromPinch(primaryHand, control);
+        const selectedState = ensureStemState(control, control.selectedStem);
 
         smoothedPrimaryTip = smoothPoint(smoothedPrimaryTip, firstHandTip, trackingConfig.tipSmoothing);
         if (secondHandTip) {
@@ -1128,20 +1483,67 @@
         } else {
           smoothedSecondaryTip = null;
         }
+
+        const mirroredPrimaryX = clamp(1 - smoothedPrimaryTip.x, 0, 1);
         const primaryY = clamp(smoothedPrimaryTip.y, 0, 1);
 
-        const targetVolume = clamp(1 - primaryY, 0, 1);
-        control.volume = smoothValue(control.volume, targetVolume, trackingConfig.controlSmoothing);
+        pushHandXSample(mirroredPrimaryX, nowMs);
+        const swipeDirection = detectSwipeDirection(nowMs);
+        if (swipeDirection) {
+          switchSongBySwipe(swipeDirection);
+          handXHistory = [];
+        }
 
-        if (smoothedSecondaryTip) {
+        const currentWristAngle = wristRotationAngle(primaryHand);
+        if (neutralWristAngle === null) {
+          neutralWristAngle = currentWristAngle;
+        }
+
+        if (previousWristAngle === null) {
+          previousWristAngle = currentWristAngle;
+        }
+
+        const wristDelta = normalizeAngleDiff(currentWristAngle - neutralWristAngle);
+        const wristDeltaStep = normalizeAngleDiff(currentWristAngle - previousWristAngle);
+
+        if (anyPinchActive && Math.abs(wristDeltaStep) > trackingConfig.twistDeltaThreshold) {
+          selectedState.pitch = clamp(
+            selectedState.pitch + wristDeltaStep * trackingConfig.twistPitchScale,
+            0.7,
+            1.35
+          );
+        }
+
+        previousWristAngle = currentWristAngle;
+
+        if (Math.abs(wristDelta) > 0.08) {
+          setGestureText(wristDelta > 0 ? "twist speed up" : "twist slow down");
+        }
+
+        if (!previousPrimaryTipForControl) {
+          previousPrimaryTipForControl = { y: primaryY };
+        }
+
+        const yDelta = previousPrimaryTipForControl.y - primaryY;
+        if (anyPinchActive && Math.abs(yDelta) > trackingConfig.volumeGestureDeltaThreshold) {
+          selectedState.volume = clamp(
+            selectedState.volume + yDelta * trackingConfig.volumeGestureScale,
+            0,
+            1
+          );
+        }
+
+        previousPrimaryTipForControl = { y: primaryY };
+
+        if (anyPinchActive && activeTrackIds.length === 2) {
+          crossfadeValue = smoothValue(crossfadeValue, mirroredPrimaryX, trackingConfig.controlSmoothing);
+        }
+
+        if (anyPinchActive && smoothedSecondaryTip) {
           const mirroredSecondX = clamp(1 - smoothedSecondaryTip.x, 0, 1);
-          const secondY = clamp(smoothedSecondaryTip.y, 0, 1);
 
           const targetFilter = map(mirroredSecondX, 0, 1, 300, 12000);
-          const targetPitch = map(1 - secondY, 0, 1, 0.7, 1.35);
-
-          control.filter = smoothValue(control.filter, targetFilter, trackingConfig.controlSmoothing);
-          control.pitch = smoothValue(control.pitch, targetPitch, trackingConfig.controlSmoothing);
+          selectedState.filter = smoothValue(selectedState.filter, targetFilter, trackingConfig.controlSmoothing);
         }
 
         applyControls();
@@ -1151,6 +1553,10 @@
       } else {
         smoothedPrimaryTip = null;
         smoothedSecondaryTip = null;
+        neutralWristAngle = null;
+        previousWristAngle = null;
+        previousPrimaryTipForControl = null;
+        handXHistory = [];
         resetPinchState();
       }
 
