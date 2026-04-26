@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stem Hand Controller</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(0, 255, 255, 0.25), transparent 30%),
+        radial-gradient(circle at 80% 90%, rgba(255, 0, 170, 0.25), transparent 35%),
+        #060711;
+      color: white;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(1120px, 100%);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.35);
+      backdrop-filter: blur(16px);
+    }
+
+    h1 { margin: 0 0 8px; font-size: 34px; line-height: 1.0; }
+    h2 { margin: 0 0 10px; font-size: 20px; }
+    p { color: #d7d7e8; line-height: 1.45; }
+
+    .upload-box {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 13px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.15);
+      margin-bottom: 12px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 14px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #62eaff, #ff5de8);
+      border-radius: inherit;
+      transition: width 0.25s ease;
+    }
+
+    .small-status {
+      color: #e9e9ff;
+      font-size: 14px;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 20px;
+      padding: 18px;
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      background: rgba(255,255,255,0.14);
+      cursor: pointer;
+      transition: 0.12s;
+    }
+
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button:active { transform: scale(0.96); }
+    button.primary { background: linear-gradient(135deg, rgba(0,220,255,0.65), rgba(255,0,180,0.65)); }
+
+    .stem-grid { display: grid; gap: 12px; margin-top: 18px; }
+
+    .stem {
+      border-radius: 18px;
+      background: rgba(255,255,255,0.1);
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 90px 1fr 60px;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid transparent;
+    }
+
+    .stem.active {
+      border-color: rgba(120, 235, 255, 0.9);
+      box-shadow: 0 0 25px rgba(72, 220, 255, 0.22);
+    }
+
+    .bar { height: 16px; border-radius: 999px; background: rgba(255,255,255,0.13); overflow: hidden; }
+    .fill { height: 100%; width: 50%; background: linear-gradient(90deg, #62eaff, #ff5de8); border-radius: inherit; }
+
+    #visualizer { width: 100%; height: 390px; display: block; border-radius: 24px; background: #05050c; }
+
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      margin-top: 14px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #05050c;
+    }
+
+    .video-wrap video {
+      width: 100%;
+      display: block;
+      transform: scaleX(-1);
+      opacity: 0.72;
+    }
+
+    .video-wrap canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform: scaleX(-1);
+      background: transparent;
+    }
+
+    .readout { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+    .pill { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 16px; font-size: 14px; color: #e9e9ff; }
+    .note { font-size: 13px; color: #cfcfe8; margin-top: 10px; }
+
+    .track-panel {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .track-empty {
+      color: #cfd5eb;
+      font-size: 14px;
+      padding-top: 6px;
+    }
+
+    .track-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .track-row:last-child { border-bottom: 0; }
+
+    .track-meta {
+      display: grid;
+      gap: 3px;
+    }
+
+    .track-meta strong { font-size: 14px; }
+    .track-meta span { font-size: 12px; color: #cfd5eb; }
+
+    .track-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .track-actions button {
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .track-select {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .track-select label {
+      font-size: 12px;
+      color: #cfd5eb;
+      font-weight: 700;
+    }
+
+    .track-select select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.12);
+      color: white;
+      padding: 8px 10px;
+    }
+
+    @media (max-width: 850px) { .app { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <h1>Stem Hand Controller</h1>
+      <p>Upload a song, auto-split it into stems, then control vocals, drums, bass, and other with your hands.</p>
+
+      <div class="upload-box">
+        <h2>1. Upload song</h2>
+        <input id="songFile" type="file" accept="audio/*" />
+        <button class="primary" id="uploadButton" onclick="uploadAndSplit()">Upload + Auto Split</button>
+        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="small-status" id="splitStatus">Choose a song to begin.</div>
+        <div class="note">First split can take a few minutes because Demucs may download model files.</div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" onclick="startAudio()">Play / Resume</button>
+        <button onclick="stopAudio()">Stop</button>
+        <button id="cameraButton" onclick="toggleCamera()">Start Hand Tracking</button>
+        <button onclick="resetControls()">Reset</button>
+      </div>
+
+      <div class="track-panel">
+        <h2>2. Saved Tracks</h2>
+        <div id="savedTracks" class="track-empty">No saved tracks yet. Upload a song to create one.</div>
+      </div>
+
+      <div class="track-panel">
+        <h2>3. Mix Setup</h2>
+        <div class="track-select">
+          <label for="controlledTrackSelect">Track controlled by hands</label>
+          <select id="controlledTrackSelect" disabled>
+            <option value="">No active tracks</option>
+          </select>
+        </div>
+        <div id="activeTracks" class="track-empty">No tracks in the mix yet.</div>
+      </div>
+
+      <div class="stem-grid" id="stemGrid"></div>
+
+      <div class="readout">
+        <div class="pill">Selected: <span id="selectedText">vocals</span></div>
+        <div class="pill">Volume: <span id="volumeText">1.00</span></div>
+        <div class="pill">Filter: <span id="filterText">8000</span> Hz</div>
+        <div class="pill">Pitch: <span id="pitchText">1.00</span>x</div>
+      </div>
+
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="handOverlay"></canvas>
+      </div>
+    </section>
+
+    <section class="card"><canvas id="visualizer" width="900" height="640"></canvas></section>
+  </main>
+
+  <script type="module">
+    const handTrackingModuleUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
+    const handTrackingWasmUrl = `${handTrackingModuleUrl}/wasm`;
+    const handTrackingModelUrl = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+
+    const trackingConfig = {
+      tipSmoothing: 0.25,
+      controlSmoothing: 0.24,
+      pinchActivationDistance: 0.048,
+      pinchReleaseDistance: 0.068,
+      pinchCooldownMs: 220,
+      minHandDetectionConfidence: 0.55,
+      minHandPresenceConfidence: 0.55,
+      minTrackingConfidence: 0.55
+    };
+
+    const pinchStemMap = [
+      { tipIndex: 8, stem: "vocals", label: "Thumb + Index" },
+      { tipIndex: 12, stem: "drums", label: "Thumb + Middle" },
+      { tipIndex: 16, stem: "bass", label: "Thumb + Ring" },
+      { tipIndex: 20, stem: "other", label: "Thumb + Pinky" }
+    ];
+
+    const handConnections = [
+      [0, 1], [1, 2], [2, 3], [3, 4],
+      [0, 5], [5, 6], [6, 7], [7, 8],
+      [5, 9], [9, 10], [10, 11], [11, 12],
+      [9, 13], [13, 14], [14, 15], [15, 16],
+      [13, 17], [17, 18], [18, 19], [19, 20],
+      [0, 17]
+    ];
+
+    let HandLandmarker;
+    let FilesetResolver;
+
+    const stemNames = ["vocals", "drums", "bass", "other"];
+    function stemUrl(trackId, stemName) {
+      return `/stems/${trackId}/${stemName}.wav`;
+    }
+
+    let audioContext;
+    let isPlaying = false;
+
+    let savedTracks = [];
+    let activeTrackIds = [];
+    let controlledTrackId = null;
+
+    let trackBuffers = {};
+    let trackNodes = {};
+    let trackControls = {};
+
+    let selectedStem = "vocals";
+    let volumeValue = 1;
+    let filterValue = 8000;
+    let pitchValue = 1;
+
+    const stemGrid = document.getElementById("stemGrid");
+    const selectedText = document.getElementById("selectedText");
+    const volumeText = document.getElementById("volumeText");
+    const filterText = document.getElementById("filterText");
+    const pitchText = document.getElementById("pitchText");
+    const canvas = document.getElementById("visualizer");
+    const ctx = canvas.getContext("2d");
+    const video = document.getElementById("video");
+    const handOverlay = document.getElementById("handOverlay");
+    const handOverlayCtx = handOverlay.getContext("2d");
+    const songFile = document.getElementById("songFile");
+    const splitStatus = document.getElementById("splitStatus");
+    const progressFill = document.getElementById("progressFill");
+    const uploadButton = document.getElementById("uploadButton");
+    const savedTracksEl = document.getElementById("savedTracks");
+    const activeTracksEl = document.getElementById("activeTracks");
+    const controlledTrackSelect = document.getElementById("controlledTrackSelect");
+    const cameraButton = document.getElementById("cameraButton");
+
+    let handLandmarker;
+    let cameraRunning = false;
+    let lastVideoTime = -1;
+    let smoothedPrimaryTip = null;
+    let smoothedSecondaryTip = null;
+    let lastPinchSwitchAt = 0;
+    let pinchActiveByTip = {};
+
+    for (const name of stemNames) {
+      const row = document.createElement("div");
+      row.className = "stem";
+      row.id = `stem-${name}`;
+      row.innerHTML = `<strong>${name}</strong><div class="bar"><div class="fill" id="fill-${name}"></div></div><span id="val-${name}">1.00</span>`;
+      stemGrid.appendChild(row);
+    }
+
+    function findTrack(trackId) {
+      return savedTracks.find((track) => track.id === trackId);
+    }
+
+    function trackLabel(trackId) {
+      const track = findTrack(trackId);
+      return track ? track.name : "Unknown track";
+    }
+
+    function formatTrackDate(dateString) {
+      if (!dateString) return "Unknown time";
+      const parsed = new Date(dateString);
+      if (Number.isNaN(parsed.getTime())) return "Unknown time";
+      return parsed.toLocaleString();
+    }
+
+    function ensureTrackControl(trackId) {
+      if (!trackControls[trackId]) {
+        trackControls[trackId] = {
+          selectedStem: "vocals",
+          volume: 1,
+          filter: 8000,
+          pitch: 1
+        };
+      }
+      return trackControls[trackId];
+    }
+
+    function syncControlledTrack() {
+      if (activeTrackIds.length === 0) {
+        controlledTrackId = null;
+        return;
+      }
+      if (!controlledTrackId || !activeTrackIds.includes(controlledTrackId)) {
+        controlledTrackId = activeTrackIds[0];
+      }
+    }
+
+    function renderSavedTracks() {
+      savedTracksEl.innerHTML = "";
+
+      if (savedTracks.length === 0) {
+        savedTracksEl.className = "track-empty";
+        savedTracksEl.textContent = "No saved tracks yet. Upload a song to create one.";
+        return;
+      }
+
+      savedTracksEl.className = "";
+
+      for (const track of savedTracks) {
+        const row = document.createElement("div");
+        row.className = "track-row";
+
+        const meta = document.createElement("div");
+        meta.className = "track-meta";
+        meta.innerHTML = `<strong>${track.name}</strong><span>${formatTrackDate(track.createdAt)}</span>`;
+
+        const actions = document.createElement("div");
+        actions.className = "track-actions";
+
+        const addButton = document.createElement("button");
+        const inMix = activeTrackIds.includes(track.id);
+        addButton.textContent = inMix ? "Added" : "Add to Mix";
+        addButton.disabled = inMix;
+        addButton.addEventListener("click", async () => {
+          await addTrackToMix(track.id);
+        });
+
+        const controlButton = document.createElement("button");
+        controlButton.textContent = "Control";
+        controlButton.addEventListener("click", async () => {
+          if (!activeTrackIds.includes(track.id)) {
+            await addTrackToMix(track.id);
+          }
+          controlledTrackId = track.id;
+          renderActiveTracks();
+          applyControls();
+        });
+
+        actions.appendChild(addButton);
+        actions.appendChild(controlButton);
+
+        row.appendChild(meta);
+        row.appendChild(actions);
+        savedTracksEl.appendChild(row);
+      }
+    }
+
+    function renderActiveTracks() {
+      activeTracksEl.innerHTML = "";
+      controlledTrackSelect.innerHTML = "";
+
+      syncControlledTrack();
+
+      if (activeTrackIds.length === 0) {
+        activeTracksEl.className = "track-empty";
+        activeTracksEl.textContent = "No tracks in the mix yet.";
+        controlledTrackSelect.disabled = true;
+        controlledTrackSelect.innerHTML = "<option value=\"\">No active tracks</option>";
+        return;
+      }
+
+      activeTracksEl.className = "";
+      controlledTrackSelect.disabled = false;
+
+      for (const trackId of activeTrackIds) {
+        const track = findTrack(trackId);
+        const option = document.createElement("option");
+        option.value = trackId;
+        option.textContent = track ? track.name : trackId;
+        option.selected = trackId === controlledTrackId;
+        controlledTrackSelect.appendChild(option);
+
+        const row = document.createElement("div");
+        row.className = "track-row";
+
+        const meta = document.createElement("div");
+        meta.className = "track-meta";
+        const controlledTag = trackId === controlledTrackId ? " (controlled)" : "";
+        meta.innerHTML = `<strong>${track ? track.name : trackId}</strong><span>${track ? track.originalFile : "Saved track"}${controlledTag}</span>`;
+
+        const actions = document.createElement("div");
+        actions.className = "track-actions";
+
+        const controlButton = document.createElement("button");
+        controlButton.textContent = "Control";
+        controlButton.disabled = trackId === controlledTrackId;
+        controlButton.addEventListener("click", () => {
+          controlledTrackId = trackId;
+          renderActiveTracks();
+          applyControls();
+        });
+
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", async () => {
+          await removeTrackFromMix(trackId);
+        });
+
+        actions.appendChild(controlButton);
+        actions.appendChild(removeButton);
+
+        row.appendChild(meta);
+        row.appendChild(actions);
+        activeTracksEl.appendChild(row);
+      }
+    }
+
+    async function refreshTracks() {
+      try {
+        const response = await fetch("/api/tracks");
+        const result = await response.json();
+
+        if (!result.ok) {
+          throw new Error(result.error || "Failed to load saved tracks.");
+        }
+
+        savedTracks = Array.isArray(result.tracks) ? result.tracks : [];
+        renderSavedTracks();
+        renderActiveTracks();
+        applyControls();
+      } catch (error) {
+        console.error(error);
+        savedTracksEl.className = "track-empty";
+        savedTracksEl.textContent = "Could not load saved tracks from server.";
+      }
+    }
+
+    async function restartPlaybackAfterMixChange() {
+      if (!isPlaying) {
+        return;
+      }
+      window.stopAudio();
+      await window.startAudio();
+    }
+
+    async function addTrackToMix(trackId) {
+      if (!activeTrackIds.includes(trackId)) {
+        activeTrackIds.push(trackId);
+      }
+
+      ensureTrackControl(trackId);
+      if (!controlledTrackId) {
+        controlledTrackId = trackId;
+      }
+
+      renderSavedTracks();
+      renderActiveTracks();
+      applyControls();
+
+      splitStatus.textContent = `${trackLabel(trackId)} added to mix.`;
+
+      if (isPlaying) {
+        try {
+          await restartPlaybackAfterMixChange();
+        } catch (error) {
+          console.error(error);
+          splitStatus.textContent = "Added track, but audio restart failed. Press Play / Resume.";
+        }
+      }
+    }
+
+    async function removeTrackFromMix(trackId) {
+      activeTrackIds = activeTrackIds.filter((id) => id !== trackId);
+      delete trackNodes[trackId];
+
+      if (!activeTrackIds.includes(controlledTrackId)) {
+        controlledTrackId = activeTrackIds.length > 0 ? activeTrackIds[0] : null;
+      }
+
+      renderSavedTracks();
+      renderActiveTracks();
+      applyControls();
+
+      splitStatus.textContent = `${trackLabel(trackId)} removed from mix.`;
+
+      if (isPlaying) {
+        try {
+          await restartPlaybackAfterMixChange();
+        } catch (error) {
+          console.error(error);
+          splitStatus.textContent = "Removed track, but audio restart failed. Press Play / Resume.";
+        }
+      }
+    }
+
+    controlledTrackSelect.addEventListener("change", () => {
+      controlledTrackId = controlledTrackSelect.value || null;
+      renderActiveTracks();
+      applyControls();
+    });
+
+    window.uploadAndSplit = async function () {
+      const file = songFile.files[0];
+      if (!file) { splitStatus.textContent = "Pick a song file first."; return; }
+
+      uploadButton.disabled = true;
+      splitStatus.textContent = "Uploading song...";
+      progressFill.style.width = "5%";
+
+      const formData = new FormData();
+      formData.append("song", file);
+
+      try {
+        const response = await fetch("/api/upload-song", { method: "POST", body: formData });
+        const result = await response.json();
+        if (!result.ok) {
+          splitStatus.textContent = result.error || "Upload failed.";
+          uploadButton.disabled = false;
+          return;
+        }
+        pollSplitStatus(result.jobId);
+      } catch (error) {
+        splitStatus.textContent = "Upload failed. Check the terminal.";
+        uploadButton.disabled = false;
+        console.error(error);
+      }
+    };
+
+    async function pollSplitStatus(jobId) {
+      try {
+        const response = await fetch(`/api/split-status/${jobId}`);
+        const result = await response.json();
+        if (!result.ok) {
+          splitStatus.textContent = result.error || "Could not read split status.";
+          uploadButton.disabled = false;
+          return;
+        }
+        splitStatus.textContent = result.message;
+        progressFill.style.width = `${result.progress}%`;
+
+        if (result.state === "done") {
+          uploadButton.disabled = false;
+          splitStatus.textContent = result.message || "Done. Track saved.";
+          progressFill.style.width = "100%";
+
+          await refreshTracks();
+
+          if (result.trackId) {
+            await addTrackToMix(result.trackId);
+            controlledTrackId = result.trackId;
+            renderActiveTracks();
+            applyControls();
+          }
+
+          return;
+        }
+        if (result.state === "error") { uploadButton.disabled = false; return; }
+        setTimeout(() => pollSplitStatus(jobId), 1200);
+      } catch (error) {
+        splitStatus.textContent = "Lost connection to server while splitting.";
+        uploadButton.disabled = false;
+        console.error(error);
+      }
+    }
+
+    window.startAudio = async function () {
+      if (activeTrackIds.length === 0) {
+        alert("Add at least one saved track to the mix first.");
+        return;
+      }
+
+      if (!audioContext) audioContext = new AudioContext();
+      if (audioContext.state === "suspended") await audioContext.resume();
+      await loadActiveTrackBuffers();
+      if (!isPlaying) playAll();
+    };
+
+    window.stopAudio = function () {
+      for (const trackId of Object.keys(trackNodes)) {
+        for (const name of stemNames) {
+          const source = trackNodes[trackId].sources[name];
+          if (source) {
+            try { source.stop(); } catch {}
+          }
+        }
+      }
+      trackNodes = {};
+      isPlaying = false;
+    };
+
+    window.resetControls = function () {
+      if (!controlledTrackId) return;
+
+      const control = ensureTrackControl(controlledTrackId);
+      control.selectedStem = "vocals";
+      control.volume = 1;
+      control.filter = 8000;
+      control.pitch = 1;
+
+      applyControls();
+    };
+
+    async function loadTrackBuffers(trackId) {
+      if (trackBuffers[trackId]) {
+        return trackBuffers[trackId];
+      }
+
+      const buffers = {};
+
+      for (const name of stemNames) {
+        const response = await fetch(stemUrl(trackId, name), { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Missing ${name} for ${trackLabel(trackId)}.`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        buffers[name] = await audioContext.decodeAudioData(arrayBuffer);
+      }
+
+      trackBuffers[trackId] = buffers;
+      return buffers;
+    }
+
+    async function loadActiveTrackBuffers() {
+      for (const trackId of activeTrackIds) {
+        await loadTrackBuffers(trackId);
+      }
+    }
+
+    function playAll() {
+      const startTime = audioContext.currentTime + 0.05;
+
+      trackNodes = {};
+
+      for (const trackId of activeTrackIds) {
+        const buffers = trackBuffers[trackId];
+        if (!buffers) {
+          continue;
+        }
+
+        const nodes = {
+          sources: {},
+          gains: {},
+          filters: {}
+        };
+
+        for (const name of stemNames) {
+          const source = audioContext.createBufferSource();
+          const gain = audioContext.createGain();
+          const filter = audioContext.createBiquadFilter();
+
+          source.buffer = buffers[name];
+          source.loop = true;
+          source.playbackRate.value = 1;
+          filter.type = "lowpass";
+          filter.frequency.value = 8000;
+          gain.gain.value = 1;
+
+          source.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioContext.destination);
+          source.start(startTime);
+
+          nodes.sources[name] = source;
+          nodes.gains[name] = gain;
+          nodes.filters[name] = filter;
+        }
+
+        trackNodes[trackId] = nodes;
+      }
+
+      isPlaying = true;
+      applyControls();
+    }
+
+    function applyTrackNodeControl(trackId) {
+      const nodes = trackNodes[trackId];
+      if (!nodes) return;
+
+      const control = ensureTrackControl(trackId);
+
+      for (const name of stemNames) {
+        const isSelected = name === control.selectedStem;
+        if (nodes.gains[name]) nodes.gains[name].gain.value = isSelected ? control.volume : 1;
+        if (nodes.filters[name]) nodes.filters[name].frequency.value = isSelected ? control.filter : 8000;
+        if (nodes.sources[name]) nodes.sources[name].playbackRate.value = isSelected ? control.pitch : 1;
+      }
+    }
+
+    function applyControls() {
+      if (!controlledTrackId || !activeTrackIds.includes(controlledTrackId)) {
+        selectedStem = "none";
+        volumeValue = 0;
+        filterValue = 0;
+        pitchValue = 0;
+
+        selectedText.textContent = "none";
+        volumeText.textContent = "0.00";
+        filterText.textContent = "0";
+        pitchText.textContent = "0.00";
+
+        for (const name of stemNames) {
+          const row = document.getElementById(`stem-${name}`);
+          const fill = document.getElementById(`fill-${name}`);
+          const val = document.getElementById(`val-${name}`);
+          row.classList.remove("active");
+          fill.style.width = "0%";
+          val.textContent = "0.00";
+        }
+
+        sendToServer({
+          activeTracks: activeTrackIds,
+          controlledTrackId: null,
+          selectedStem: null,
+          volume: 0,
+          filterValue: 0,
+          pitchValue: 0,
+          energy: 0
+        });
+        return;
+      }
+
+      const control = ensureTrackControl(controlledTrackId);
+      selectedStem = control.selectedStem;
+      volumeValue = control.volume;
+      filterValue = control.filter;
+      pitchValue = control.pitch;
+
+      selectedText.textContent = selectedStem;
+      volumeText.textContent = volumeValue.toFixed(2);
+      filterText.textContent = Math.round(filterValue);
+      pitchText.textContent = pitchValue.toFixed(2);
+
+      for (const name of stemNames) {
+        const row = document.getElementById(`stem-${name}`);
+        const fill = document.getElementById(`fill-${name}`);
+        const val = document.getElementById(`val-${name}`);
+        row.classList.toggle("active", name === selectedStem);
+        if (name === selectedStem) {
+          fill.style.width = `${Math.round(volumeValue * 100)}%`;
+          val.textContent = volumeValue.toFixed(2);
+        } else {
+          fill.style.width = "100%";
+          val.textContent = "1.00";
+        }
+      }
+
+      for (const trackId of activeTrackIds) {
+        applyTrackNodeControl(trackId);
+      }
+
+      sendToServer({
+        activeTracks: activeTrackIds,
+        controlledTrackId,
+        controlledTrackName: trackLabel(controlledTrackId),
+        selectedStem,
+        volume: volumeValue,
+        filterValue,
+        pitchValue,
+        energy: Math.max(volumeValue, filterValue / 12000)
+      });
+    }
+
+    async function sendToServer(data) {
+      try {
+        await fetch("/api/control", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+      } catch {}
+    }
+
+    function smoothValue(previousValue, targetValue, smoothing) {
+      return previousValue + (targetValue - previousValue) * smoothing;
+    }
+
+    function smoothPoint(previousPoint, targetPoint, smoothing) {
+      if (!previousPoint) {
+        return { x: targetPoint.x, y: targetPoint.y };
+      }
+
+      return {
+        x: smoothValue(previousPoint.x, targetPoint.x, smoothing),
+        y: smoothValue(previousPoint.y, targetPoint.y, smoothing)
+      };
+    }
+
+    function distance2D(pointA, pointB) {
+      const dx = pointA.x - pointB.x;
+      const dy = pointA.y - pointB.y;
+      return Math.hypot(dx, dy);
+    }
+
+    function resetPinchState() {
+      pinchActiveByTip = {};
+      for (const mapping of pinchStemMap) {
+        pinchActiveByTip[mapping.tipIndex] = false;
+      }
+    }
+
+    function syncHandOverlaySize() {
+      if (!video.videoWidth || !video.videoHeight) {
+        return;
+      }
+
+      if (handOverlay.width !== video.videoWidth || handOverlay.height !== video.videoHeight) {
+        handOverlay.width = video.videoWidth;
+        handOverlay.height = video.videoHeight;
+      }
+    }
+
+    function clearHandOverlay() {
+      handOverlayCtx.clearRect(0, 0, handOverlay.width, handOverlay.height);
+    }
+
+    function drawHandOverlay(results) {
+      syncHandOverlaySize();
+
+      if (!handOverlay.width || !handOverlay.height) {
+        return;
+      }
+
+      clearHandOverlay();
+
+      if (!results.landmarks || results.landmarks.length === 0) {
+        return;
+      }
+
+      handOverlayCtx.lineWidth = 2;
+      handOverlayCtx.strokeStyle = "rgba(120, 235, 255, 0.9)";
+      handOverlayCtx.fillStyle = "rgba(255, 255, 255, 0.85)";
+
+      for (const landmarks of results.landmarks) {
+        for (const [startIndex, endIndex] of handConnections) {
+          const start = landmarks[startIndex];
+          const end = landmarks[endIndex];
+          if (!start || !end) continue;
+
+          handOverlayCtx.beginPath();
+          handOverlayCtx.moveTo(start.x * handOverlay.width, start.y * handOverlay.height);
+          handOverlayCtx.lineTo(end.x * handOverlay.width, end.y * handOverlay.height);
+          handOverlayCtx.stroke();
+        }
+
+        for (let index = 0; index < landmarks.length; index++) {
+          const point = landmarks[index];
+          if (!point) continue;
+
+          const isPinchTip = pinchStemMap.some((mapping) => mapping.tipIndex === index);
+          const isThumbTip = index === 4;
+
+          handOverlayCtx.beginPath();
+          handOverlayCtx.arc(
+            point.x * handOverlay.width,
+            point.y * handOverlay.height,
+            isThumbTip || isPinchTip ? 4 : 2.6,
+            0,
+            Math.PI * 2
+          );
+
+          if (isThumbTip) {
+            handOverlayCtx.fillStyle = "rgba(255, 220, 120, 0.95)";
+          } else if (isPinchTip && pinchActiveByTip[index]) {
+            handOverlayCtx.fillStyle = "rgba(255, 120, 200, 0.95)";
+          } else if (isPinchTip) {
+            handOverlayCtx.fillStyle = "rgba(120, 235, 255, 0.95)";
+          } else {
+            handOverlayCtx.fillStyle = "rgba(255, 255, 255, 0.78)";
+          }
+
+          handOverlayCtx.fill();
+        }
+      }
+    }
+
+    function updateStemFromPinch(landmarks, control) {
+      const thumbTip = landmarks[4];
+      if (!thumbTip) return;
+
+      const now = performance.now();
+
+      for (const mapping of pinchStemMap) {
+        const fingerTip = landmarks[mapping.tipIndex];
+        if (!fingerTip) continue;
+
+        const distance = distance2D(thumbTip, fingerTip);
+        const wasActive = pinchActiveByTip[mapping.tipIndex] || false;
+        const isActive = wasActive
+          ? distance <= trackingConfig.pinchReleaseDistance
+          : distance <= trackingConfig.pinchActivationDistance;
+
+        pinchActiveByTip[mapping.tipIndex] = isActive;
+
+        if (
+          isActive
+          && !wasActive
+          && now - lastPinchSwitchAt >= trackingConfig.pinchCooldownMs
+          && control.selectedStem !== mapping.stem
+        ) {
+          control.selectedStem = mapping.stem;
+          lastPinchSwitchAt = now;
+          splitStatus.textContent = `${mapping.label} pinch selected ${mapping.stem}.`;
+          break;
+        }
+      }
+    }
+
+    window.toggleCamera = async function () {
+      if (!handLandmarker) {
+        if (!HandLandmarker || !FilesetResolver) {
+          try {
+            const visionModule = await import(handTrackingModuleUrl);
+            HandLandmarker = visionModule.HandLandmarker;
+            FilesetResolver = visionModule.FilesetResolver;
+          } catch (error) {
+            splitStatus.textContent = "Could not load hand-tracking library. Check internet and try again.";
+            console.error(error);
+            return;
+          }
+        }
+
+        try {
+          const vision = await FilesetResolver.forVisionTasks(handTrackingWasmUrl);
+          handLandmarker = await HandLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: handTrackingModelUrl,
+              delegate: "GPU"
+            },
+            runningMode: "VIDEO",
+            numHands: 2,
+            minHandDetectionConfidence: trackingConfig.minHandDetectionConfidence,
+            minHandPresenceConfidence: trackingConfig.minHandPresenceConfidence,
+            minTrackingConfidence: trackingConfig.minTrackingConfidence
+          });
+        } catch (error) {
+          splitStatus.textContent = "Hand-tracking model failed to initialize.";
+          console.error(error);
+          return;
+        }
+      }
+
+      if (!cameraRunning) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          });
+
+          video.srcObject = stream;
+          video.addEventListener("loadedmetadata", syncHandOverlaySize, { once: true });
+          cameraRunning = true;
+          cameraButton.textContent = "Stop Hand Tracking";
+          lastVideoTime = -1;
+          smoothedPrimaryTip = null;
+          smoothedSecondaryTip = null;
+          resetPinchState();
+          if (!controlledTrackId) {
+            splitStatus.textContent = "Hand tracking is on. Add a track to Mix Setup and pick a controlled track.";
+          } else {
+            splitStatus.textContent = "Hand tracking is on. Move your hand up/down for volume, left/right for filter, pinch to switch stems.";
+          }
+          requestAnimationFrame(trackHands);
+        } catch (error) {
+          splitStatus.textContent = "Camera access denied or unavailable.";
+          console.error(error);
+        }
+      } else {
+        const stream = video.srcObject;
+        if (stream) {
+          for (const track of stream.getTracks()) {
+            track.stop();
+          }
+        }
+        video.srcObject = null;
+        cameraRunning = false;
+        cameraButton.textContent = "Start Hand Tracking";
+        smoothedPrimaryTip = null;
+        smoothedSecondaryTip = null;
+        lastVideoTime = -1;
+        resetPinchState();
+        clearHandOverlay();
+      }
+    };
+
+    async function trackHands() {
+      if (!cameraRunning || !handLandmarker) return;
+
+      if (video.readyState < 2) {
+        requestAnimationFrame(trackHands);
+        return;
+      }
+
+      if (video.currentTime === lastVideoTime) {
+        requestAnimationFrame(trackHands);
+        return;
+      }
+
+      lastVideoTime = video.currentTime;
+
+      const results = handLandmarker.detectForVideo(video, performance.now());
+      drawHandOverlay(results);
+
+      if (results.landmarks && results.landmarks.length > 0 && controlledTrackId) {
+        const control = ensureTrackControl(controlledTrackId);
+        const primaryHand = results.landmarks[0];
+        const secondaryHand = results.landmarks[1] || null;
+        const firstHandTip = primaryHand[8];
+        const secondHandTip = secondaryHand ? secondaryHand[8] : null;
+
+        updateStemFromPinch(primaryHand, control);
+
+        smoothedPrimaryTip = smoothPoint(smoothedPrimaryTip, firstHandTip, trackingConfig.tipSmoothing);
+        if (secondHandTip) {
+          smoothedSecondaryTip = smoothPoint(smoothedSecondaryTip, secondHandTip, trackingConfig.tipSmoothing);
+        } else {
+          smoothedSecondaryTip = null;
+        }
+        const primaryY = clamp(smoothedPrimaryTip.y, 0, 1);
+
+        const targetVolume = clamp(1 - primaryY, 0, 1);
+        control.volume = smoothValue(control.volume, targetVolume, trackingConfig.controlSmoothing);
+
+        if (smoothedSecondaryTip) {
+          const mirroredSecondX = clamp(1 - smoothedSecondaryTip.x, 0, 1);
+          const secondY = clamp(smoothedSecondaryTip.y, 0, 1);
+
+          const targetFilter = map(mirroredSecondX, 0, 1, 300, 12000);
+          const targetPitch = map(1 - secondY, 0, 1, 0.7, 1.35);
+
+          control.filter = smoothValue(control.filter, targetFilter, trackingConfig.controlSmoothing);
+          control.pitch = smoothValue(control.pitch, targetPitch, trackingConfig.controlSmoothing);
+        }
+
+        applyControls();
+      } else if (results.landmarks && results.landmarks.length > 0 && !controlledTrackId) {
+        resetPinchState();
+        splitStatus.textContent = "Detected your hands. Add a track to Mix Setup to control audio.";
+      } else {
+        smoothedPrimaryTip = null;
+        smoothedSecondaryTip = null;
+        resetPinchState();
+      }
+
+      requestAnimationFrame(trackHands);
+    }
+
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+    function map(value, inMin, inMax, outMin, outMax) { return outMin + ((value - inMin) * (outMax - outMin)) / (inMax - inMin); }
+
+    function drawVisualizer() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const time = performance.now() * 0.001;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      ctx.fillStyle = "rgba(255,255,255,0.04)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < stemNames.length; i++) {
+        const name = stemNames[i];
+        const isActive = name === selectedStem;
+        const radius = 70 + i * 55 + Math.sin(time * 2 + i) * 12;
+        const dots = 52;
+        for (let j = 0; j < dots; j++) {
+          const angle = (j / dots) * Math.PI * 2 + time * (0.4 + i * 0.1);
+          const wobble = Math.sin(time * 4 + j * 0.5 + i) * (isActive ? 22 : 8);
+          const x = centerX + Math.cos(angle) * (radius + wobble);
+          const y = centerY + Math.sin(angle) * (radius + wobble);
+          ctx.beginPath();
+          ctx.arc(x, y, isActive ? 5.5 : 3.2, 0, Math.PI * 2);
+          ctx.fillStyle = isActive ? `rgba(120, 235, 255, ${0.65 + volumeValue * 0.35})` : "rgba(255,255,255,0.22)";
+          ctx.fill();
+        }
+        ctx.font = isActive ? "bold 28px Arial" : "20px Arial";
+        ctx.fillStyle = isActive ? "white" : "rgba(255,255,255,0.45)";
+        ctx.fillText(name, 30, 50 + i * 38);
+      }
+      requestAnimationFrame(drawVisualizer);
+    }
+
+    resetPinchState();
+    window.addEventListener("resize", syncHandOverlaySize);
+    drawVisualizer();
+    refreshTracks();
+    applyControls();
+  </script>
+</body>
+</html>
